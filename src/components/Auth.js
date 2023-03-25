@@ -51,10 +51,10 @@ function Auth() {
         />
         <button onClick={() => login(displayName, pwd)}>Login</button>
       </div>
+      <br />
       {username &&
         pair && ( // if username and pair are truthy
           <div>
-            <h2>Logout</h2>
             <button onClick={logout}>Logout</button>
           </div>
         )}

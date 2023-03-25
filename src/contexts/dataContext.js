@@ -19,15 +19,24 @@ const DataContext = createContext();
 export const DataProvider = ({ children }) => {
   const [username, setUsername] = useState("");
   const [pair, setPair] = useState(null);
+  const [unions, setUnions] = useState([]);
 
   // on mount
   useEffect(() => {
     user.get("alias").on((e) => setUsername(e));
     user.get("pair").on((e) => setPair(e));
+    user.get("union_memberships").on((e) => console.log(e));
+    user
+      .get("union_memberships")
+      .map()
+      .once((data, key) => {
+        setUnions((unions) => [...unions, data]);
+      });
 
     return () => {
       setUsername("");
       setPair(null);
+      setUnions([]);
     };
   }, []);
 
@@ -114,17 +123,88 @@ export const DataProvider = ({ children }) => {
   }
 
   function logout() {
-    user.leave();
-    setUsername("");
-    setPair(null);
+    user.leave().then(() => {
+      setUsername("");
+      setPair(null);
+      setUnions([]);
+    });
+  }
+
+  // generate random id
+  function generateUUID() {
+    // Public Domain/MIT
+    var d = new Date().getTime(); //Timestamp
+    var d2 =
+      (typeof performance !== "undefined" &&
+        performance.now &&
+        performance.now() * 1000) ||
+      0; //Time in microseconds since page-load or 0 if unsupported
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(
+      /[xy]/g,
+      function (c) {
+        var r = Math.random() * 16; //random number between 0 and 16
+        if (d > 0) {
+          //Use timestamp until depleted
+          r = (d + r) % 16 | 0;
+          d = Math.floor(d / 16);
+        } else {
+          //Use microseconds since page-load if supported
+          r = (d2 + r) % 16 | 0;
+          d2 = Math.floor(d2 / 16);
+        }
+        return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+      }
+    );
+  }
+
+  function createUnion(name) {
+    const uuid = generateUUID();
+    const unionObj = {
+      id: uuid,
+      name: name,
+      owner: username,
+      members: {
+        [username]: true,
+      },
+    };
+
+    db.get("unions")
+      .get(uuid)
+      .put(unionObj, (ack) => {
+        if (ack.err) {
+          console.log("error when creating union:", ack.err);
+        } else {
+          console.log("success! created union:", ack);
+        }
+      });
+
+    user.get("union_memberships").put({ [uuid]: name }, (ack) => {
+      if (ack.err) {
+        console.log("error when adding union membership to user:", ack.err);
+      } else {
+        console.log("success! added union membership to user:", ack);
+      }
+    });
+
+    user.get("union_ownerships").put({ [uuid]: name }, (ack) => {
+      if (ack.err) {
+        console.log("error when adding union ownership to user:", ack.err);
+      } else {
+        console.log("success! added union ownership to user:", ack);
+      }
+    });
+
+    setUnions((prev) => [...prev, name]);
   }
 
   const value = {
     username,
     pair,
+    unions,
     login,
     signup,
     logout,
+    createUnion,
   };
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
