@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { Dialog } from "@headlessui/react";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import { Link } from "react-router-dom";
+import { DataContext } from "../contexts/dataContext";
 
 const navigation = [
   { name: "About Us", href: "/About" },
@@ -13,6 +14,7 @@ const navigation = [
 
 function CustomNavbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { username, logout } = useContext(DataContext);
   return (
     <div>
       <header className="absolute inset-x-0 top-0 z-50">
@@ -54,12 +56,12 @@ function CustomNavbar() {
             ))}
           </div>
           <div className="hidden lg:flex lg:flex-1 lg:justify-end">
-            <a
-              href="/login"
+            <button
+              onClick={() => logout()}
               className="text-sm font-semibold leading-6 text-tBlue"
             >
-              Log in <span aria-hidden="true">&rarr;</span>
-            </a>
+              Logout <span aria-hidden="true">&rarr;</span>
+            </button>
           </div>
         </nav>
         <Dialog

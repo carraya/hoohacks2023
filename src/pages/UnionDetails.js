@@ -4,13 +4,22 @@ import { DataContext } from "../contexts/dataContext";
 import Navbar from "../ui/Navbar";
 import Footer from "../ui/Footer";
 import EventInfo from "../ui/EventInfo";
+import EtherTrans from "../components/EtherTrans";
 
 import { useNavigate } from "react-router-dom";
 
 function UnionDetails() {
   const navigate = useNavigate();
-  const { currentUnion, getUnionName, inviteToUnion, events, createEvent } =
-    useContext(DataContext);
+  const {
+    currentUnion,
+    getUnionName,
+    inviteToUnion,
+    events,
+    createEvent,
+    unionOwner,
+    setMetaMaskAddress,
+    address: addressState,
+  } = useContext(DataContext);
   const [unionName, setUnionName] = useState("");
   const [invitee, setInvitee] = useState("");
   const [eventName, setEventName] = useState("");
@@ -18,6 +27,7 @@ function UnionDetails() {
   const [eventTime, setEventTime] = useState("");
   const [eventLocation, setEventLocation] = useState("");
   const [eventDescription, setEventDescription] = useState("");
+  const [address, setAddress] = useState("");
 
   function compare(a, b) {
     if (a.eventDate < b.eventDate) {
@@ -61,7 +71,41 @@ function UnionDetails() {
               </div>
 
               <div class="flex flex-col mt-8">
-                <div class="flex flex-row items-center justify-center text-xs mb-2"></div>
+                <div class="flex flex-row items-center justify-center text-xs mb-2">
+                  {unionOwner ? (
+                    <div>
+                      <div className="flex flex-row items-center justify-center">
+                        <button
+                          onClick={() => {
+                            try {
+                              setMetaMaskAddress(address);
+                              setAddress("");
+                            } catch (error) {
+                              console.log(error);
+                            }
+                          }}
+                          className="rounded-md bg-transparent px-3.5 py-2.5 text-sm font-semibold border-2 rounded-none border-black text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                        >
+                          Set MetaMask Address
+                        </button>
+                        <p>{addressState ? addressState : "No address"}</p>
+                      </div>
+                      <div className="mt-2.5">
+                        <input
+                          type="text"
+                          name="metaMaskAddress"
+                          id="metaMaskAddress"
+                          className="block w-full rounded-none border-black border-2 py-2 px-3.5 text-gray-900"
+                          placeholder="MetaMask Address"
+                          value={address}
+                          onChange={(e) => setAddress(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <EtherTrans />
+                  )}
+                </div>
                 <div className="flex flex-row items-center justify-center">
                   <button
                     onClick={() => {

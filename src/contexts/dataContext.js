@@ -26,6 +26,8 @@ export const DataProvider = ({ children }) => {
   );
   const [messages, setMessages] = useState([]);
   const [events, setEvents] = useState([]);
+  const [unionOwner, setUnionOwner] = useState(false);
+  const [address, setAddress] = useState("");
 
   // on mount
   useEffect(() => {
@@ -48,6 +50,15 @@ export const DataProvider = ({ children }) => {
       setCurrentUnion(null);
     };
   }, []);
+
+  useEffect(() => {
+    db.get("unions")
+      .get(currentUnion)
+      .get("metamask_address")
+      .once((data) => {
+        setAddress(data);
+      });
+  }, [currentUnion, address]);
 
   useEffect(() => {
     if (currentUnion) {
@@ -73,6 +84,27 @@ export const DataProvider = ({ children }) => {
       };
     }
   }, [currentUnion]);
+
+  useEffect(() => {
+    function isUnionOwner() {
+      db.get("unions")
+        .get(currentUnion)
+        .get("owner")
+        .once((owner) => {
+          console.log("owner is", owner);
+          if (owner === username) {
+            setUnionOwner(true);
+          } else {
+            console.log("Owner is: ", owner, "You are: ", username);
+            setUnionOwner(false);
+          }
+        });
+    }
+
+    if (currentUnion) {
+      isUnionOwner();
+    }
+  }, [currentUnion, username]);
 
   useEffect(() => {
     // either generate keys or put public keys in db
@@ -258,6 +290,7 @@ export const DataProvider = ({ children }) => {
       id: uuid,
       name: name,
       owner: username,
+      metamask_address: "",
       members: {
         [username]: true,
       },
@@ -298,6 +331,17 @@ export const DataProvider = ({ children }) => {
   function changeCurrentUnion(unionid) {
     console.log(unionid);
     setCurrentUnion(unionid);
+  }
+
+  function setMetaMaskAddress(addr) {
+    try {
+      db.get("unions").get(currentUnion).get("metamask_address").put(addr);
+      console.log("set metamask address to", addr);
+      setAddress(addr);
+      console.log("My address state:", address);
+    } catch (error) {
+      console.log("error setting metamask address", error);
+    }
   }
 
   function inviteToUnion(unionId, inviteeUsername) {
@@ -446,6 +490,8 @@ export const DataProvider = ({ children }) => {
     messages,
     invitations,
     events,
+    unionOwner,
+    address,
     login,
     signup,
     logout,
@@ -457,6 +503,7 @@ export const DataProvider = ({ children }) => {
     declineInvitation,
     getUnionName,
     createEvent,
+    setMetaMaskAddress,
   };
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
