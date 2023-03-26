@@ -1,6 +1,7 @@
 import Gun from "gun";
 import "gun/sea";
 import "gun/axe";
+import CryptoJS from "crypto-js";
 
 import { createContext, useState, useEffect } from "react";
 
@@ -12,6 +13,9 @@ const SEA = Gun.SEA;
 
 // user
 export const user = db.user().recall({ sessionStorage: true });
+
+const encryptKey =
+  "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff";
 
 // context
 const DataContext = createContext();
@@ -68,9 +72,15 @@ export const DataProvider = ({ children }) => {
       // Define a function to handle new messages
       const handleMessage = (data, id) => {
         console.log("New message:", data);
+        const decryptedMessage = decryptMessage(data.message, encryptKey);
         setMessages((prevMessages) => [
           ...prevMessages,
-          { id: id, message: data.message, user: data.user, time: data.time },
+          {
+            id: id,
+            message: decryptedMessage,
+            user: data.user,
+            time: data.time,
+          },
         ]);
       };
 
@@ -437,18 +447,33 @@ export const DataProvider = ({ children }) => {
       return;
     }
     if (message) {
+      const encryptedMessage = encryptMessage(message, encryptKey);
       db.get("chats")
         .get(currentUnion)
-        .set({ message: message, user: username, time: Date.now() }, (ack) => {
-          if (ack.err) {
-            console.error("Error sending message:", ack.err);
-          } else {
-            console.log("message sent");
+        .set(
+          { message: encryptedMessage, user: username, time: Date.now() },
+          (ack) => {
+            if (ack.err) {
+              console.error("Error sending message:", ack.err);
+            } else {
+              console.log("message sent");
+            }
           }
-        });
+        );
     } else {
       console.log("no message");
     }
+  }
+
+  function encryptMessage(message, key) {
+    const encryptedMessage = CryptoJS.AES.encrypt(message, key).toString();
+    return encryptedMessage;
+  }
+
+  function decryptMessage(encryptedMessage, key) {
+    const decryptedBytes = CryptoJS.AES.decrypt(encryptedMessage, key);
+    const decryptedMessage = decryptedBytes.toString(CryptoJS.enc.Utf8);
+    return decryptedMessage;
   }
 
   // event functions
