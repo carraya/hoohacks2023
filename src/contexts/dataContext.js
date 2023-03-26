@@ -25,6 +25,7 @@ export const DataProvider = ({ children }) => {
     localStorage.getItem("currentUnion")
   );
   const [messages, setMessages] = useState([]);
+  const [events, setEvents] = useState([]);
 
   // on mount
   useEffect(() => {
@@ -157,6 +158,39 @@ export const DataProvider = ({ children }) => {
       };
     }
   }, [username]);
+
+  // useEffect(() => {
+  //   if (currentUnion) {
+  //     const eventRef = db.get("unions").get(currentUnion).get("events").map();
+
+  //     const handleEvent = (data, id) => {
+  //       setEvents((prevEvents) => [...prevEvents, { ...data, id }]);
+  //     };
+
+  //     eventRef.on(handleEvent);
+
+  //     return () => {
+  //       eventRef.off(handleEvent);
+  //       setEvents([]);
+  //     };
+  //   }
+  // }, [currentUnion]);
+  useEffect(() => {
+    if (currentUnion) {
+      const eventsRef = db.get("unions").get(currentUnion).get("events").map();
+
+      const handleEvent = (data, id) => {
+        setEvents((prevEvents) => [...prevEvents, { ...data, id }]);
+      };
+
+      eventsRef.on(handleEvent);
+
+      return () => {
+        eventsRef.off(handleEvent);
+        setEvents([]); // Clear the events state when switching unions or unmounting the component
+      };
+    }
+  }, [currentUnion]);
 
   // authentication functions
   function signup(displayName, pwd) {
@@ -335,6 +369,23 @@ export const DataProvider = ({ children }) => {
     );
   }
 
+  async function getUnionName(unionId) {
+    if (!unionId) {
+      return null;
+    }
+
+    const unionName = await new Promise((resolve) => {
+      db.get("unions")
+        .get(unionId)
+        .get("name")
+        .once((name) => {
+          resolve(name);
+        });
+    });
+
+    return unionName;
+  }
+
   // chat functions
   function handleMessageSend(message) {
     if (!currentUnion) {
@@ -356,6 +407,36 @@ export const DataProvider = ({ children }) => {
     }
   }
 
+  // event functions
+  function createEvent(title, description, eventDate, eventTime, location) {
+    if (!currentUnion || !title) {
+      return;
+    }
+
+    const eventId = generateUUID();
+
+    const event = {
+      title,
+      description,
+      eventDate,
+      eventTime,
+      location,
+    };
+
+    // Save the event in the database
+    db.get("unions")
+      .get(currentUnion)
+      .get("events")
+      .get(eventId)
+      .put({ ...event, id: eventId }, (ack) => {
+        if (ack.err) {
+          console.error("Error creating event:", ack.err);
+        } else {
+          console.log("Event created:", ack);
+        }
+      });
+  }
+
   const value = {
     user,
     username,
@@ -364,6 +445,7 @@ export const DataProvider = ({ children }) => {
     currentUnion,
     messages,
     invitations,
+    events,
     login,
     signup,
     logout,
@@ -373,6 +455,8 @@ export const DataProvider = ({ children }) => {
     inviteToUnion,
     acceptInvitation,
     declineInvitation,
+    getUnionName,
+    createEvent,
   };
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
