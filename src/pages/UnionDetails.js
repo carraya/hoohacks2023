@@ -60,11 +60,11 @@ function UnionDetails() {
   });
 
   return (
-    <div>
+    <div className='h-screen'>
       <Navbar />
-      <div className="bg-tPurple">
+      <div className="bg-tPurple h-screen">
         <div class="flex h-screen antialiased text-tBlue">
-          <div class="flex flex-row h-full w-full justify-center mt-1000">
+          <div class="flex flex-row h-full w-full justify-center">
             <div class="flex flex-col py-8 pl-6 pr-2 w-64 bg-transparent flex-shrink-0">
               <div class="flex flex-row items-center justify-center h-12 w-full mt-12">
                 <div class="ml-2 font-bold text-2xl">{unionName}</div>
@@ -74,7 +74,7 @@ function UnionDetails() {
                 <div class="flex flex-row items-center justify-center text-xs mb-2">
                   {unionOwner ? (
                     <div>
-                      <div className="flex flex-row items-center justify-center">
+                      <div className="flex flex-row items-center justify-center ">
                         <button
                           onClick={() => {
                             try {
@@ -87,8 +87,16 @@ function UnionDetails() {
                           className="rounded-md bg-transparent px-3.5 py-2.5 text-sm font-semibold border-2 rounded-none border-black text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                         >
                           Set MetaMask Address
+                          {/* <span className='break-normal'> {addressState ? addressState : "No address set!"}</span> */}
                         </button>
-                        <p>{addressState ? addressState : "No address"}</p>
+                        {/* <p className="">
+                          {addressState ? addressState : "No address set!"}
+                        </p> */}
+                      </div>
+                      <div>
+                        <p className="justify-center text-center pt-2 pb-.5">
+                          {addressState ? addressState : "No address set!"}
+                        </p>
                       </div>
                       <div className="mt-2.5">
                         <input
@@ -106,7 +114,7 @@ function UnionDetails() {
                     <EtherTrans />
                   )}
                 </div>
-                <div className="flex flex-row items-center justify-center">
+                <div className="flex flex-row items-center justify-center pt-6 pb-.5">
                   <button
                     onClick={() => {
                       try {
@@ -118,7 +126,7 @@ function UnionDetails() {
                     }}
                     className="rounded-md bg-transparent px-3.5 py-2.5 text-sm font-semibold border-2 rounded-none border-black text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                   >
-                    Invite
+                    Invite Member
                   </button>
                 </div>
                 <div className="mt-2.5">
@@ -133,7 +141,7 @@ function UnionDetails() {
                   />
                 </div>
               </div>
-              <div className="pt-12 flex flex-row items-center justify-center">
+              <div className="pt-12 flex flex-row items-center justify-center pt-8">
                 <button
                   onClick={() => {
                     try {
@@ -149,7 +157,7 @@ function UnionDetails() {
               </div>
               <br />
               <div>
-                <h1>Events</h1>
+                <h1 className="text-center font-bold">Events</h1>
                 {uniqueEvents.map((event) => (
                   <EventInfo event={event} />
                 ))}
@@ -214,7 +222,7 @@ function UnionDetails() {
                       console.log(error);
                     }
                   }}
-                >
+                className='rounded-md bg-transparent px-3.5 py-2.5 text-sm font-semibold border-2 rounded-none border-black text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'>
                   Create Event
                 </button>
               </div>
@@ -222,7 +230,10 @@ function UnionDetails() {
           </div>
         </div>
       </div>
-      <Footer />
+      <footer class=" bg-tPurple text-center text-neutral-600 bgtPurple text-neutral-200 lg:text-left h-screen">
+      <div class="bg-tPurple p-6 text-center bg-tPurple">
+      </div>
+    </footer>
     </div>
   );
 }

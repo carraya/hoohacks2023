@@ -5,11 +5,11 @@ import { Link } from "react-router-dom";
 import { DataContext } from "../contexts/dataContext";
 
 const navigation = [
-  { name: "About Us", href: "/About" },
-  { name: "Crytpo Payments", href: "/Crypto" },
-  { name: "Messaging", href: "/Messenger" },
+  // { name: "About Us", href: "/About" },
+  // { name: "Crytpo Payments", href: "/Crypto" },
+  // { name: "Messaging", href: "/Messenger" },
   { name: "Unions", href: "/unions" },
-  { name: "Test Unions Page", href: "/UnionDescription" },
+  // { name: "Test Unions Page", href: "/UnionDescription" },
 ];
 
 function CustomNavbar() {
