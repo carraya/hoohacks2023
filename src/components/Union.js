@@ -2,7 +2,8 @@ import { useState, useContext } from "react";
 import { DataContext } from "../contexts/dataContext";
 
 function Union() {
-  const { username, pair, unions, createUnion } = useContext(DataContext);
+  const { username, pair, unions, createUnion, changeCurrentUnion } =
+    useContext(DataContext);
   const [unionName, setUnionName] = useState("");
   const unionMap = Array.from(new Set(unions));
 
@@ -21,9 +22,17 @@ function Union() {
       </div>
       <div>
         <h2>Unions</h2>
-        {unionMap.map((name) => (
-          <div key={name}>
-            <h3>{name}</h3>
+        {unionMap.map((unionid) => (
+          <div key={unionid}>
+            <h3>{unionid}</h3>
+            <button
+              onClick={() => {
+                changeCurrentUnion(unionid);
+                localStorage.setItem("currentUnion", unionid);
+              }}
+            >
+              Set Union
+            </button>
           </div>
         ))}
       </div>

@@ -20,32 +20,62 @@ export const DataProvider = ({ children }) => {
   const [username, setUsername] = useState("");
   const [pair, setPair] = useState(null);
   const [unions, setUnions] = useState([]);
+  const [currentUnion, setCurrentUnion] = useState(
+    localStorage.getItem("currentUnion")
+  );
+  const [messages, setMessages] = useState([]);
 
   // on mount
   useEffect(() => {
+    setCurrentUnion(localStorage.getItem("currentUnion"));
     user.get("alias").on((e) => setUsername(e));
     user.get("pair").on((e) => setPair(e));
-    user.get("union_memberships").on((e) => console.log(e));
+    // user.get("union_memberships").on((e) => set);
+    // console.log("currentUnion: ", localStorage.getItem("currentUnion"));
     user
       .get("union_memberships")
       .map()
       .once((data, key) => {
-        setUnions((unions) => [...unions, data]);
+        setUnions((unions) => [...unions, key]);
       });
 
     return () => {
       setUsername("");
       setPair(null);
       setUnions([]);
+      setCurrentUnion(null);
     };
   }, []);
 
-  // on username change
+  useEffect(() => {
+    if (currentUnion) {
+      console.log("currentUnion exists: ", currentUnion);
+      const messageRef = db.get("chats").get(currentUnion).map();
+
+      // Define a function to handle new messages
+      const handleMessage = (data, id) => {
+        console.log("New message:", data);
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          { id: id, message: data.message, user: data.user, time: data.time },
+        ]);
+      };
+
+      // Subscribe to new messages
+      messageRef.on(handleMessage);
+
+      // Cleanup function to unsubscribe from messages when the component is unmounted or currentUnion changes
+      return () => {
+        messageRef.off(handleMessage);
+        setMessages([]); // Clear the messages state when switching unions or unmounting the component
+      };
+    }
+  }, [currentUnion]);
 
   useEffect(() => {
     // either generate keys or put public keys in db
     async function onAuth() {
-      user.get("alias").once((alias) => setUsername(alias));
+      // user.get("alias").once((alias) => setUsername(alias));
 
       user.get("pair").once(async (keyPair) => {
         if (!keyPair) {
@@ -127,6 +157,9 @@ export const DataProvider = ({ children }) => {
       setUsername("");
       setPair(null);
       setUnions([]);
+      setMessages([]);
+      setCurrentUnion(null);
+      localStorage.removeItem("currentUnion");
     });
   }
 
@@ -157,6 +190,7 @@ export const DataProvider = ({ children }) => {
     );
   }
 
+  // union functions
   function createUnion(name) {
     const uuid = generateUUID();
     const unionObj = {
@@ -176,6 +210,9 @@ export const DataProvider = ({ children }) => {
         } else {
           console.log("success! created union:", ack);
         }
+      })
+      .then(() => {
+        // db.get("chats").put({ [uuid]})
       });
 
     user.get("union_memberships").put({ [uuid]: name }, (ack) => {
@@ -194,17 +231,48 @@ export const DataProvider = ({ children }) => {
       }
     });
 
-    setUnions((prev) => [...prev, name]);
+    setUnions((prev) => [...prev, uuid]);
+  }
+
+  function changeCurrentUnion(unionid) {
+    console.log(unionid);
+    setCurrentUnion(unionid);
+  }
+
+  // chat functions
+  function handleMessageSend(message) {
+    if (!currentUnion) {
+      console.log("no current union");
+      return;
+    }
+    if (message) {
+      db.get("chats")
+        .get(currentUnion)
+        .set({ message: message, user: username, time: Date.now() }, (ack) => {
+          if (ack.err) {
+            console.error("Error sending message:", ack.err);
+          } else {
+            console.log("message sent");
+          }
+        });
+    } else {
+      console.log("no message");
+    }
   }
 
   const value = {
+    user,
     username,
     pair,
     unions,
+    currentUnion,
+    messages,
     login,
     signup,
     logout,
     createUnion,
+    changeCurrentUnion,
+    handleMessageSend,
   };
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
