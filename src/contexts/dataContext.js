@@ -20,6 +20,7 @@ export const DataProvider = ({ children }) => {
   const [username, setUsername] = useState("");
   const [pair, setPair] = useState(null);
   const [unions, setUnions] = useState([]);
+  const [invitations, setInvitations] = useState([]);
   const [currentUnion, setCurrentUnion] = useState(
     localStorage.getItem("currentUnion")
   );
@@ -131,6 +132,32 @@ export const DataProvider = ({ children }) => {
     };
   }, [username]);
 
+  useEffect(() => {
+    if (username) {
+      const invitationRef = db
+        .get("users")
+        .get(username)
+        .get("invitations")
+        .map();
+
+      const handleInvitation = (data, id) => {
+        if (data && data.unionId && data.inviter) {
+          setInvitations((prevInvitations) => [
+            ...prevInvitations,
+            { id: id, unionId: data.unionId, inviter: data.inviter },
+          ]);
+        }
+      };
+
+      invitationRef.on(handleInvitation);
+
+      return () => {
+        invitationRef.off(handleInvitation);
+        setInvitations([]);
+      };
+    }
+  }, [username]);
+
   // authentication functions
   function signup(displayName, pwd) {
     user.create(displayName, pwd, (ack) => {
@@ -239,6 +266,75 @@ export const DataProvider = ({ children }) => {
     setCurrentUnion(unionid);
   }
 
+  function inviteToUnion(unionId, inviteeUsername) {
+    if (!unionId || !inviteeUsername) {
+      console.log("No union ID or invitee username");
+      return;
+    }
+
+    // Store the invitation in the invited member's data
+    db.get("users")
+      .get(inviteeUsername)
+      .get("invitations")
+      .set({ unionId, inviter: username }, (ack) => {
+        if (ack.err) {
+          console.error("Error sending invitation:", ack.err);
+        } else {
+          console.log("Invitation sent");
+        }
+      });
+  }
+
+  function acceptInvitation(invitation) {
+    // Remove the invitation from the user's data
+    db.get("users")
+      .get(username)
+      .get("invitations")
+      .get(invitation.id)
+      .put(null);
+
+    // Add the user to the union's member list
+    db.get("unions")
+      .get(invitation.unionId)
+      .get("members")
+      .put({ [username]: true }, (ack) => {
+        if (ack.err) {
+          console.error("Error adding user to union member list:", ack.err);
+        } else {
+          console.log("User added to union member list");
+        }
+      });
+
+    // Add the union to the user's union memberships
+    user.get("union_memberships").put({ [invitation.unionId]: true }, (ack) => {
+      if (ack.err) {
+        console.error("Error adding union membership to user:", ack.err);
+      } else {
+        console.log("Union membership added to user");
+        setUnions((prev) => [...prev, invitation.unionId]);
+      }
+    });
+
+    // Remove the accepted invitation from the invitations state
+    setInvitations((prevInvitations) =>
+      prevInvitations.filter((inv) => inv.id !== invitation.id)
+    );
+  }
+
+  function declineInvitation(invitation) {
+    // Remove the invitation from the user's data
+    db.get("users")
+      .get(username)
+      .get("invitations")
+      .get(invitation.id)
+      .put(null);
+
+    // Remove the declined invitation from the invitations state
+    setInvitations((prevInvitations) =>
+      prevInvitations.filter((inv) => inv.id !== invitation.id)
+    );
+  }
+
   // chat functions
   function handleMessageSend(message) {
     if (!currentUnion) {
@@ -267,12 +363,16 @@ export const DataProvider = ({ children }) => {
     unions,
     currentUnion,
     messages,
+    invitations,
     login,
     signup,
     logout,
     createUnion,
     changeCurrentUnion,
     handleMessageSend,
+    inviteToUnion,
+    acceptInvitation,
+    declineInvitation,
   };
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
